@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>flower</title>
+<title>grow a flower</title>
 <style>
   html, body { margin: 0; height: 100%; background: #000; color: #fff; overflow: hidden;
     font-family: system-ui, sans-serif; }
@@ -26,10 +26,9 @@
 <div id="ui">
   <div id="setup" style="display:contents">
     <div class="row">
-      <input type="number" id="h" min="0" value="3"> h
+      <input type="number" id="h" min="0" value="1"> h
       <input type="number" id="m" min="0" value="0"> min
     </div>
-    <label class="row"><input type="checkbox" id="alarm" checked> alarm</label>
     <button id="start">start</button>
   </div>
   <button id="stop" class="ghost hidden">give up</button>
@@ -136,13 +135,13 @@ function explode() {
 const $ = id => document.getElementById(id);
 const pad = n => String(n).padStart(2, '0');
 const fmt = s => (s >= 3600 ? Math.floor(s / 3600) + ':' : '') + pad(Math.floor(s % 3600 / 60)) + ':' + pad(s % 60);
-let state = 'idle', end, total, ctx;
+let state = 'idle', end, total;
 
 $('start').onclick = () => {
   total = ((+$('h').value || 0) * 60 + (+$('m').value || 0)) * 60000;
   if (!total) return;
   end = Date.now() + total;
-  if ($('alarm').checked) ctx = new (window.AudioContext || window.webkitAudioContext)();
+  if (window.Notification && Notification.permission === 'default') Notification.requestPermission();
   $('setup').classList.add('hidden'); $('stop').classList.remove('hidden');
   state = 'run';
 };
@@ -150,21 +149,14 @@ $('stop').onclick = () => location.reload();
 $('again').onclick = () => location.reload();
 
 function finish() {
-  state = 'done'; explode(); playAlarm();
+  state = 'done'; explode(); notify();
   document.title = 'done.';
   $('stop').classList.add('hidden'); $('again').classList.remove('hidden');
 }
 
-function playAlarm() {
-  if (!ctx) return; ctx.resume();
-  const notes = [523, 659, 784, 1047];
-  for (let r = 0; r < 3; r++) notes.forEach((f, i) => {
-    const t = ctx.currentTime + r * 1.2 + i * .18, o = ctx.createOscillator(), g = ctx.createGain();
-    o.type = 'triangle'; o.frequency.value = f;
-    g.gain.setValueAtTime(.0001, t); g.gain.exponentialRampToValueAtTime(.3, t + .02);
-    g.gain.exponentialRampToValueAtTime(.0001, t + .35);
-    o.connect(g).connect(ctx.destination); o.start(t); o.stop(t + .4);
-  });
+function notify() {
+  if (!window.Notification || Notification.permission !== 'granted') return;
+  new Notification('done.', { body: 'your flower is ready.' });
 }
 
 function loop(now) {
