@@ -6,10 +6,7 @@ grow-a-flower is a focus timer: set how long you want to focus (study/work) and 
 
 Only works properly on a computer, not a phone.
 
-[![](4.png)](https://grow-a-flower.vercel.app)
 [![](3.png)](https://grow-a-flower.vercel.app)
-[![](2.png)](https://grow-a-flower.vercel.app)
-[![](1.png)](https://grow-a-flower.vercel.app)
 
 ## Stars
 [![a104437ana/grow-a-flower stars](https://repo-stars.vercel.app/api/stars-badge?repo=a104437ana%2Fgrow-a-flower)](https://repo-stars.vercel.app)
