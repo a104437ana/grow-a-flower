@@ -178,7 +178,7 @@ function loop(now) {
   } else if (state === 'run') {
     const left = Math.max(0, end - Date.now());
     p = 1 - left / total; label = fmt(Math.ceil(left / 1000));
-    document.title = 'growing flower';
+    document.title = 'growing a flower';
     if (left === 0) finish();
   }
   if (state === 'done') { p = 1; label = 'done.'; }
