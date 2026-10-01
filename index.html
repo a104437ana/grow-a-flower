@@ -33,6 +33,7 @@
   </div>
   <button id="stop" class="ghost hidden">give up</button>
   <button id="again" class="hidden">new flower</button>
+  <button id="mute" class="ghost hidden">stop alarm</button>
 </div>
 
 <script>
@@ -147,13 +148,18 @@ $('start').onclick = () => {
 };
 $('stop').onclick = () => location.reload();
 $('again').onclick = () => location.reload();
+$('mute').onclick = () => {
+  clearInterval(alarmInterval);
+  $('mute').classList.add('hidden');
+};
 
 function finish() {
   state = 'done'; explode(); startAlarm();
   document.title = 'done.';
-  $('stop').classList.add('hidden'); $('again').classList.remove('hidden');
+  $('stop').classList.add('hidden'); $('again').classList.remove('hidden'); $('mute').classList.remove('hidden');
 }
 
+let alarmInterval;
 function startAlarm() {
   ctx.resume();
   const notes = [523, 659, 784, 1047];
@@ -168,7 +174,7 @@ function startAlarm() {
     });
   };
   ring();
-  setInterval(ring, 1400);
+  alarmInterval = setInterval(ring, 1400);
 }
 
 function loop(now) {
