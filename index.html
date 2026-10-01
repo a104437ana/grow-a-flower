@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="pt">
+<html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>flor</title>
+<title>flower</title>
 <style>
   html, body { margin: 0; height: 100%; background: #000; color: #fff; overflow: hidden;
     font-family: system-ui, sans-serif; }
@@ -12,7 +12,8 @@
     align-items: center; gap: 14px; }
   .row { display: flex; gap: 10px; align-items: center; color: #aaa; }
   input[type=number] { width: 64px; padding: 8px; font: inherit; font-size: 18px; text-align: center;
-    background: transparent; color: #fff; border: 1px solid #333; border-radius: 8px; }
+    background: transparent; color: #fff; border: 1px solid #333; border-radius: 8px;
+    color-scheme: dark; }
   button { font: inherit; cursor: pointer; border: none; border-radius: 999px; padding: 10px 28px;
     background: #fff; color: #000; font-weight: 500; }
   button.ghost { background: transparent; color: #666; padding: 6px 12px; }
@@ -28,11 +29,11 @@
       <input type="number" id="h" min="0" value="3"> h
       <input type="number" id="m" min="0" value="0"> min
     </div>
-    <label class="row"><input type="checkbox" id="alarm" checked> alarme</label>
-    <button id="start">começar</button>
+    <label class="row"><input type="checkbox" id="alarm" checked> alarm</label>
+    <button id="start">start</button>
   </div>
-  <button id="stop" class="ghost hidden">desistir</button>
-  <button id="again" class="hidden">nova flor</button>
+  <button id="stop" class="ghost hidden">give up</button>
+  <button id="again" class="hidden">new flower</button>
 </div>
 
 <script>
@@ -150,7 +151,7 @@ $('again').onclick = () => location.reload();
 
 function finish() {
   state = 'done'; explode(); playAlarm();
-  document.title = 'feito.';
+  document.title = 'done.';
   $('stop').classList.add('hidden'); $('again').classList.remove('hidden');
 }
 
@@ -176,7 +177,7 @@ function loop(now) {
     document.title = label;
     if (left === 0) finish();
   }
-  if (state === 'done') { p = 1; label = 'feito.'; }
+  if (state === 'done') { p = 1; label = 'done.'; }
   draw(p, now / 1000, state === 'done', label);
   requestAnimationFrame(loop);
 }
