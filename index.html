@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>flor</title>
+<style>
+  html, body { margin: 0; height: 100%; background: #000; color: #fff; overflow: hidden;
+    font-family: system-ui, sans-serif; }
+  canvas { position: fixed; inset: 0; width: 100%; height: 100%; }
+  #ui { position: fixed; left: 0; right: 0; bottom: 8vh; display: flex; flex-direction: column;
+    align-items: center; gap: 14px; }
+  .row { display: flex; gap: 10px; align-items: center; color: #aaa; }
+  input[type=number] { width: 64px; padding: 8px; font: inherit; font-size: 18px; text-align: center;
+    background: transparent; color: #fff; border: 1px solid #333; border-radius: 8px; }
+  button { font: inherit; cursor: pointer; border: none; border-radius: 999px; padding: 10px 28px;
+    background: #fff; color: #000; font-weight: 500; }
+  button.ghost { background: transparent; color: #666; padding: 6px 12px; }
+  .hidden { display: none !important; }
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+
+<div id="ui">
+  <div id="setup" style="display:contents">
+    <div class="row">
+      <input type="number" id="h" min="0" value="3"> h
+      <input type="number" id="m" min="0" value="0"> min
+    </div>
+    <label class="row"><input type="checkbox" id="alarm" checked> alarme</label>
+    <button id="start">começar</button>
+  </div>
+  <button id="stop" class="ghost hidden">desistir</button>
+  <button id="again" class="hidden">nova flor</button>
+</div>
+
+<script>
+const cv = document.getElementById('c'), x = cv.getContext('2d');
+let W, H; const D = devicePixelRatio || 1;
+function size() { W = innerWidth; H = innerHeight; cv.width = W * D; cv.height = H * D; x.setTransform(D, 0, 0, D, 0, 0); }
+size(); addEventListener('resize', size);
+
+const PAL = [[330, 280], [190, 260], [20, -20], [160, 200], [270, 320], [45, 5]];
+const cl = v => Math.min(1, Math.max(0, v)), ease = v => 1 - Math.pow(1 - v, 3);
+let F, motes = [], burst = [];
+
+function newFlower() {
+  const [a, b] = PAL[Math.random() * PAL.length | 0];
+  F = { h1: a, h2: b, spin: Math.random() * 6, layers: [] };
+  for (let k = 0; k < 7; k++) F.layers.push({ n: 8 + k * 2, s: 1 - k * .12, off: Math.random() * 6 });
+}
+for (let i = 0; i < 90; i++) motes.push({ x: Math.random(), y: Math.random(), v: .00015 + Math.random() * .0004,
+  r: Math.random() * 1.5 + .3, ph: Math.random() * 6 });
+
+function draw(p, t, done, label) {
+  x.globalCompositeOperation = 'source-over'; x.fillStyle = '#000'; x.fillRect(0, 0, W, H);
+  const cx = W / 2, cy = H * .48, R = Math.min(W, H) * .33;
+  x.globalCompositeOperation = 'lighter';
+
+  for (const m of motes) {
+    m.y -= m.v; if (m.y < 0) m.y = 1;
+    const a = (.3 + .3 * Math.sin(t * 2 + m.ph)) * (.3 + .7 * p);
+    x.fillStyle = `hsla(${F.h2},100%,80%,${a})`; x.beginPath(); x.arc(m.x * W, m.y * H, m.r, 0, 7); x.fill();
+  }
+
+  const hA = .12 * p + (done ? .08 + .05 * Math.sin(t * 2) : 0);
+  let g = x.createRadialGradient(cx, cy, 0, cx, cy, R * 1.5);
+  g.addColorStop(0, `hsla(${F.h1},100%,55%,${hA})`); g.addColorStop(1, 'hsla(0,0%,0%,0)');
+  x.fillStyle = g; x.fillRect(0, 0, W, H);
+
+  const sd = cl(p / .35), sr = 4 + R * .12 * sd * (1 + .08 * Math.sin(t * 3));
+  g = x.createRadialGradient(cx, cy, 0, cx, cy, sr * 2.5);
+  g.addColorStop(0, `hsla(${F.h2},100%,85%,.9)`); g.addColorStop(.4, `hsla(${F.h1},100%,60%,.4)`); g.addColorStop(1, 'hsla(0,0%,0%,0)');
+  x.fillStyle = g; x.beginPath(); x.arc(cx, cy, sr * 2.5, 0, 7); x.fill();
+
+  const pp = cl((p - .3) / .7);
+  x.save(); x.translate(cx, cy); x.rotate(F.spin + t * .04);
+  F.layers.forEach((L, k) => {
+    const o = ease(cl((pp - k * .07) / .5)); if (o <= 0) return;
+    const len = R * L.s * (.12 + .88 * o) * (1 + .015 * Math.sin(t * 1.3 + k)), wid = len * (.18 + .14 * o);
+    const h1 = F.h1 + (F.h2 - F.h1) * k / 6, lg = x.createLinearGradient(0, 0, 0, -len);
+    lg.addColorStop(0, `hsla(${h1},90%,40%,0)`);
+    lg.addColorStop(.55, `hsla(${h1},95%,55%,${.22 * o})`);
+    lg.addColorStop(1, `hsla(${F.h2},100%,78%,${.75 * o})`);
+    for (let i = 0; i < L.n; i++) {
+      x.save(); x.rotate(L.off + i * Math.PI * 2 / L.n);
+      x.beginPath(); x.moveTo(0, 0);
+      x.bezierCurveTo(wid, -len * .25, wid * .9, -len * .8, 0, -len);
+      x.bezierCurveTo(-wid * .9, -len * .8, -wid, -len * .25, 0, 0);
+      x.fillStyle = lg; x.fill();
+      x.strokeStyle = `hsla(${F.h2},100%,85%,${.35 * o})`; x.lineWidth = .8; x.stroke();
+      x.beginPath(); x.moveTo(0, -len * .15); x.lineTo(0, -len * .9);
+      x.strokeStyle = `hsla(${F.h2},100%,90%,${.15 * o})`; x.stroke();
+      x.restore();
+    }
+  });
+
+  const sp = cl((p - .75) / .25);
+  if (sp > 0) {
+    for (let i = 0; i < 28; i++) {
+      const a = i * Math.PI * 2 / 28, r = R * .28 * ease(sp);
+      x.strokeStyle = `hsla(45,100%,75%,${.35 * sp})`; x.lineWidth = .7;
+      x.beginPath(); x.moveTo(0, 0); x.lineTo(Math.cos(a) * r, Math.sin(a) * r); x.stroke();
+      x.fillStyle = `hsla(45,100%,80%,${.9 * sp})`; x.beginPath(); x.arc(Math.cos(a) * r, Math.sin(a) * r, 1.8, 0, 7); x.fill();
+    }
+    const N = Math.floor(220 * sp), c = R * .011;
+    for (let i = 0; i < N; i++) {
+      const r = c * Math.sqrt(i), a = i * 2.39996;
+      x.fillStyle = `hsla(${40 + i * .1},100%,${75 - i * .08}%,.9)`;
+      x.beginPath(); x.arc(Math.cos(a) * r, Math.sin(a) * r, 1 + 1.4 * (1 - i / 220), 0, 7); x.fill();
+    }
+  }
+  x.restore();
+
+  burst = burst.filter(b => b.l > 0);
+  for (const b of burst) {
+    b.x += b.vx; b.y += b.vy; b.vx *= .985; b.vy *= .985; b.vy += .01; b.l -= .005;
+    x.fillStyle = `hsla(${b.h},100%,75%,${b.l})`; x.beginPath(); x.arc(b.x, b.y, b.r, 0, 7); x.fill();
+  }
+
+  x.globalCompositeOperation = 'source-over'; x.fillStyle = '#fff'; x.textAlign = 'center';
+  x.font = `200 ${Math.min(64, W / 8)}px system-ui, sans-serif`; x.fillText(label, W / 2, H * .12);
+}
+
+function explode() {
+  const cx = W / 2, cy = H * .48;
+  for (let i = 0; i < 300; i++) {
+    const a = Math.random() * 7, s = 1 + Math.random() * 6;
+    burst.push({ x: cx, y: cy, vx: Math.cos(a) * s, vy: Math.sin(a) * s, r: Math.random() * 2 + .5, l: 1,
+      h: Math.random() < .5 ? F.h1 : F.h2 });
+  }
+}
+
+const $ = id => document.getElementById(id);
+const pad = n => String(n).padStart(2, '0');
+const fmt = s => (s >= 3600 ? Math.floor(s / 3600) + ':' : '') + pad(Math.floor(s % 3600 / 60)) + ':' + pad(s % 60);
+let state = 'idle', end, total, ctx;
+
+$('start').onclick = () => {
+  total = ((+$('h').value || 0) * 60 + (+$('m').value || 0)) * 60000;
+  if (!total) return;
+  end = Date.now() + total;
+  if ($('alarm').checked) ctx = new (window.AudioContext || window.webkitAudioContext)();
+  $('setup').classList.add('hidden'); $('stop').classList.remove('hidden');
+  state = 'run';
+};
+$('stop').onclick = () => location.reload();
+$('again').onclick = () => location.reload();
+
+function finish() {
+  state = 'done'; explode(); playAlarm();
+  document.title = 'feito.';
+  $('stop').classList.add('hidden'); $('again').classList.remove('hidden');
+}
+
+function playAlarm() {
+  if (!ctx) return; ctx.resume();
+  const notes = [523, 659, 784, 1047];
+  for (let r = 0; r < 3; r++) notes.forEach((f, i) => {
+    const t = ctx.currentTime + r * 1.2 + i * .18, o = ctx.createOscillator(), g = ctx.createGain();
+    o.type = 'triangle'; o.frequency.value = f;
+    g.gain.setValueAtTime(.0001, t); g.gain.exponentialRampToValueAtTime(.3, t + .02);
+    g.gain.exponentialRampToValueAtTime(.0001, t + .35);
+    o.connect(g).connect(ctx.destination); o.start(t); o.stop(t + .4);
+  });
+}
+
+function loop(now) {
+  let p = 0, label = '';
+  if (state === 'idle') {
+    label = fmt(((+$('h').value || 0) * 60 + (+$('m').value || 0)) * 60);
+  } else if (state === 'run') {
+    const left = Math.max(0, end - Date.now());
+    p = 1 - left / total; label = fmt(Math.ceil(left / 1000));
+    document.title = label;
+    if (left === 0) finish();
+  }
+  if (state === 'done') { p = 1; label = 'feito.'; }
+  draw(p, now / 1000, state === 'done', label);
+  requestAnimationFrame(loop);
+}
+
+newFlower();
+requestAnimationFrame(loop);
+</script>
+</body>
+</html>
