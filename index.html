@@ -31,6 +31,7 @@
     </div>
     <button id="start">grow a flower</button>
   </div>
+  <button id="pause" class="ghost hidden">pause</button>
   <button id="stop" class="ghost hidden">give up</button>
   <button id="mute" class="ghost hidden">stop alarm</button>
   <button id="again" class="hidden">new flower</button>
@@ -136,15 +137,20 @@ function explode() {
 const $ = id => document.getElementById(id);
 const pad = n => String(n).padStart(2, '0');
 const fmt = s => (s >= 3600 ? Math.floor(s / 3600) + ':' : '') + pad(Math.floor(s % 3600 / 60)) + ':' + pad(s % 60);
-let state = 'idle', end, total, ctx;
+let state = 'idle', end, total, ctx, paused = false, pausedLeft;
 
 $('start').onclick = () => {
   total = ((+$('h').value || 0) * 60 + (+$('m').value || 0)) * 60000;
   if (!total) return;
   end = Date.now() + total;
   ctx = new (window.AudioContext || window.webkitAudioContext)();
-  $('setup').classList.add('hidden'); $('stop').classList.remove('hidden');
+  $('setup').classList.add('hidden'); $('pause').classList.remove('hidden'); $('stop').classList.remove('hidden');
   state = 'run';
+};
+$('pause').onclick = () => {
+  paused = !paused;
+  if (paused) { pausedLeft = Math.max(0, end - Date.now()); $('pause').textContent = 'resume'; }
+  else { end = Date.now() + pausedLeft; $('pause').textContent = 'pause'; }
 };
 $('stop').onclick = () => location.reload();
 $('again').onclick = () => location.reload();
@@ -156,7 +162,7 @@ $('mute').onclick = () => {
 function finish() {
   state = 'done'; explode(); startAlarm();
   document.title = 'done.';
-  $('stop').classList.add('hidden'); $('again').classList.remove('hidden'); $('mute').classList.remove('hidden');
+  $('pause').classList.add('hidden'); $('stop').classList.add('hidden'); $('again').classList.remove('hidden'); $('mute').classList.remove('hidden');
 }
 
 let alarmInterval;
@@ -182,10 +188,10 @@ function loop(now) {
   if (state === 'idle') {
     label = fmt(((+$('h').value || 0) * 60 + (+$('m').value || 0)) * 60);
   } else if (state === 'run') {
-    const left = Math.max(0, end - Date.now());
+    const left = paused ? pausedLeft : Math.max(0, end - Date.now());
     p = 1 - left / total; label = fmt(Math.ceil(left / 1000));
-    document.title = 'growing a flower';
-    if (left === 0) finish();
+    document.title = paused ? 'paused' : 'growing a flower';
+    if (!paused && left === 0) finish();
   }
   if (state === 'done') { p = 1; label = 'done.'; }
   draw(p, now / 1000, state === 'done', label);
